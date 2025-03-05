@@ -2,6 +2,7 @@
 #include <windows.h>
 #include<vector>
 #include<sstream>
+#include<conio.h>
 
 /*to do for tommorow
 1.add an auto fill option 
@@ -73,20 +74,65 @@ void executeCommand(const vector<string>& args,vector<string> &prefix)
     }
 }
 
+void commandList(const string & input){
+    vector<string> validCommands={"cd","cls","ping","dir","echo","exit"};
+    cout<<"\nAuto Complete Suggestions: ";
+    for(const auto& cmd:validCommands )
+    {
+        if(cmd.find(input)==0)
+        {
+            cout<<cmd<<" ";
+        }
+    }
+    cout<<endl<<"$"<<input;
+}
+
+string getUserInput() {
+    string input;
+    char ch;
+    while (true) {
+        ch = _getch(); // Get character without Enter key
+        if (ch == '\r') break;  // Stop on Enter
+        if (ch == '\b') {  // Backspace handling
+            if (!input.empty()) {
+                cout << "\b \b";  // Move cursor back, erase character
+                input.pop_back(); // Remove last character from string
+            }
+            continue;
+        }
+        if (ch == '\t') { 
+            commandList(input); // Show auto-complete suggestions
+            continue;
+        }
+
+        cout << ch;
+        input += ch;
+    }
+
+    cout << endl;
+    return input;
+}
+
 int main(void)
 {
+    //cli-outlook commands
     system("cls");
+
     string input;
     cout<<"Type help -c  for possible command\n";
     vector<string> shellPrefix;
     shellPrefix.push_back("$");
+
+
+
+    //main loop
     while(true)
     {
     for(auto itr:shellPrefix)
     {
         cout<<itr;
     }
-    getline(cin,input);
+    input=getUserInput();
 
     if(input =="ez"||input=="exit")
     {
@@ -95,6 +141,7 @@ int main(void)
     vector<string> parsed=parseIn(input);
     executeCommand(parsed,shellPrefix);
     }
+
     return 0;
 
 }
