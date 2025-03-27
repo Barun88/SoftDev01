@@ -4,13 +4,13 @@
 #include<sstream>
 #include<conio.h>
 
-/*to do for tommorow
-1.add an auto fill option 
-2.add default windows command 
-3.make a gui
-*/
 using namespace std;
+//to add : ls command and more directory features
 
+//command function definition area 
+void listDirectory(const string&directory);
+
+//parsing the input :)
 vector<string> parseIn(const string &input)
 {
     vector<string> tokens;
@@ -25,6 +25,7 @@ vector<string> parseIn(const string &input)
     return tokens;
 }
 
+//executing commands(or calling their function)
 void executeCommand(const vector<string>& args,vector<string> &prefix)
 {
     if(args.empty())return;
@@ -51,6 +52,10 @@ void executeCommand(const vector<string>& args,vector<string> &prefix)
     {
         system("cls");
         return;
+    }
+    else if(args[0]=="ld")
+    {
+        listDirectory(args[1]);
     }
 
     string commandLine; //converting string to char * for create process
@@ -144,4 +149,31 @@ int main(void)
 
     return 0;
 
+}
+
+
+//commands function definition area 
+
+void listDirectory(const string& directory)
+{
+    WIN32_FIND_DATA findFileData;
+    HANDLE hFind;
+
+    string searchPath=directory+"\\*";
+    hFind=FindFirstFile(searchPath.c_str(),&findFileData);
+
+    if(hFind==INVALID_HANDLE_VALUE)
+    {
+        cerr<<"Error: Could not open directory."<<endl;
+    }
+
+    do{
+        cout<<findFileData.cFileName;
+        if(findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            cout<<" [DIR] ";//marking
+        cout<<endl;
+
+    }while(FindNextFile(hFind,&findFileData)!=0);
+
+    FindClose(hFind);
 }
