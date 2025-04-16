@@ -1,112 +1,117 @@
 #include <iostream>
 #include <windows.h>
-#include<vector>
-#include<sstream>
-#include<conio.h>
+#include <vector>
+#include <sstream>
+#include <conio.h>
 
 using namespace std;
-//to add : ls command and more directory features
 
-//command function definition area 
-void listDirectory(const string&directory);
+// Command function declarations
+void listDirectory(const string& directory);
 
-//parsing the input :)
+// Input parser
 vector<string> parseIn(const string &input)
 {
     vector<string> tokens;
     istringstream stream(input);
     string token;
 
-    while(stream>>token)
-    {
+    while (stream >> token) {
         tokens.push_back(token);
     }
 
     return tokens;
 }
 
-//executing commands(or calling their function)
-void executeCommand(const vector<string>& args,vector<string> &prefix)
+// Execute shell-like commands
+void executeCommand(const vector<string>& args, vector<string>& prefix)
 {
-    if(args.empty())return;
-    
-    if(args[0]=="cd")
-    {
-        if(args.size()<2)
-        {
-            cerr<<"Error: Missing Directory\n";
-        }
-        else{
-            if(!SetCurrentDirectory(args[1].c_str()))
-            {
-                cerr<<"Error: Could not change directory\n";
-            }
-            else{
+    if (args.empty()) return;
+
+    if (args[0] == "cd") {
+        if (args.size() < 2) {
+            cerr << "Error: Missing directory\n";
+        } else {
+            if (!SetCurrentDirectory(args[1].c_str())) {
+                cerr << "Error: Could not change directory\n";
+            } else {
                 prefix.push_back(args[1]);
                 prefix.push_back("/");
             }
         }
         return;
     }
-    else if(args[0]=="cls")
-    {
+    else if (args[0] == "cls") {
         system("cls");
         return;
     }
-    else if(args[0]=="ld")
-    {
+    else if (args[0] == "ld") {
+        if (args.size() < 2) {
+            cerr << "Error: Missing directory for 'ld'\n";
+            return;
+        }
         listDirectory(args[1]);
+        return;
     }
 
-    string commandLine; //converting string to char * for create process
-    for(const string&arg:args)
-    {
-        commandLine += arg+" ";//concatanation ["this","is","a","command"]->"this is a command";
+    // Concatenate args into a single command line string
+    string commandLine;
+    for (const string& arg : args) {
+        commandLine += arg + " ";
     }
 
-    STARTUPINFO si={sizeof(STARTUPINFO)};
-    PROCESS_INFORMATION pi;
+    // Check command length
     char cmd[1024];
-    strcpy_s(cmd,commandLine.c_str());
+    if (commandLine.length() >= sizeof(cmd)) {
+        cerr << "Error: Command too long.\n";
+        return;
+    }
 
-    if(CreateProcess(NULL,cmd,NULL,NULL,FALSE,0,NULL,NULL,&si,&pi)){
-        WaitForSingleObject(pi.hProcess,INFINITE);
+    strcpy_s(cmd, commandLine.c_str());
+
+    STARTUPINFO si = { sizeof(STARTUPINFO) };
+    PROCESS_INFORMATION pi;
+
+    if (CreateProcess(NULL, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+        WaitForSingleObject(pi.hProcess, INFINITE);
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
     }
-    else{
-        cerr<<"Error:Command not found.\n";
+    else {
+        cerr << "Error: Command not found.\n";
     }
 }
 
-void commandList(const string & input){
-    vector<string> validCommands={"cd","cls","ping","dir","echo","exit"};
-    cout<<"\nAuto Complete Suggestions: ";
-    for(const auto& cmd:validCommands )
-    {
-        if(cmd.find(input)==0)
-        {
-            cout<<cmd<<" ";
+// Autocomplete suggestions for commands
+void commandList(const string& input)
+{
+    vector<string> validCommands = { "cd", "cls", "ping", "dir", "echo", "exit", "ld" };
+    cout << "\nAuto Complete Suggestions: ";
+    for (const auto& cmd : validCommands) {
+        if (cmd.find(input) == 0) {
+            cout << cmd << " ";
         }
     }
-    cout<<endl<<"$"<<input;
+    cout << endl << "$" << input;
 }
 
-string getUserInput() {
+// Get input from user with autocomplete support
+string getUserInput()
+{
     string input;
     char ch;
     while (true) {
-        ch = _getch(); // Get character without Enter key
-        if (ch == '\r') break;  // Stop on Enter
-        if (ch == '\b') {  // Backspace handling
+        ch = _getch();
+        if (ch == '\r') break; // Enter key
+        if (ch == '\b') {
             if (!input.empty()) {
-                cout << "\b \b";  // Move cursor back, erase character
-                input.pop_back(); // Remove last character from string
+                cout << "\b \b";
+                input.pop_back();
             }
             continue;
         }
-        if (ch == '\t') { 
-            commandList(input); // Show auto-complete suggestions
+        if (ch == '\t') {
+            commandList(input);
             continue;
         }
 
@@ -118,62 +123,56 @@ string getUserInput() {
     return input;
 }
 
-int main(void)
+// Main function
+int main()
 {
-    //cli-outlook commands
-    system("cls");
+    system("cls"); // Clear screen once at start
 
     string input;
-    cout<<"Type help -c  for possible command\n";
+    cout << "Type help -c for possible commands\n";
     vector<string> shellPrefix;
     shellPrefix.push_back("$");
 
+    // Command loop
+    while (true) {
+        for (const auto& itr : shellPrefix) {
+            cout << itr;
+        }
+        cout << " "; // Better formatting
 
+        input = getUserInput();
 
-    //main loop
-    while(true)
-    {
-    for(auto itr:shellPrefix)
-    {
-        cout<<itr;
-    }
-    input=getUserInput();
+        if (input == "ez" || input == "exit") {
+            break;
+        }
 
-    if(input =="ez"||input=="exit")
-    {
-        break;
-    }
-    vector<string> parsed=parseIn(input);
-    executeCommand(parsed,shellPrefix);
+        vector<string> parsed = parseIn(input);
+        executeCommand(parsed, shellPrefix);
     }
 
     return 0;
-
 }
 
-
-//commands function definition area 
-
+// Lists files and directories in a directory
 void listDirectory(const string& directory)
 {
     WIN32_FIND_DATA findFileData;
     HANDLE hFind;
 
-    string searchPath=directory+"\\*";
-    hFind=FindFirstFile(searchPath.c_str(),&findFileData);
+    string searchPath = directory + "\\*";
+    hFind = FindFirstFile(searchPath.c_str(), &findFileData);
 
-    if(hFind==INVALID_HANDLE_VALUE)
-    {
-        cerr<<"Error: Could not open directory."<<endl;
+    if (hFind == INVALID_HANDLE_VALUE) {
+        cerr << "Error: Could not open directory." << endl;
+        return;
     }
 
-    do{
-        cout<<findFileData.cFileName;
-        if(findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-            cout<<" [DIR] ";//marking
-        cout<<endl;
-
-    }while(FindNextFile(hFind,&findFileData)!=0);
+    do {
+        cout << findFileData.cFileName;
+        if (findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            cout << " [DIR]";
+        cout << endl;
+    } while (FindNextFile(hFind, &findFileData) != 0);
 
     FindClose(hFind);
 }
