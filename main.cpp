@@ -3,6 +3,7 @@
 #include <vector>
 #include <sstream>
 #include <conio.h>
+#include <fstream>
 
 using namespace std;
 
@@ -22,6 +23,8 @@ vector<string> parseIn(const string &input)
 
     return tokens;
 }
+
+//execute python scripts D:
 
 // Execute shell-like commands
 void executeCommand(const vector<string>& args, vector<string>& prefix)
@@ -51,6 +54,17 @@ void executeCommand(const vector<string>& args, vector<string>& prefix)
             return;
         }
         listDirectory(args[1]);
+        return;
+    }
+
+    else if(args[0]=="help" && args.size()<2){
+        
+        string helptxt;
+        ifstream helpFile("command_help.txt");
+        while(getline(helpFile,helptxt)){
+        cout<<helptxt<<endl;
+        }
+        helpFile.close();
         return;
     }
 
@@ -129,7 +143,7 @@ int main()
     system("cls"); // Clear screen once at start
 
     string input;
-    cout << "Type help -c for possible commands\n";
+    cout << "Type help -c for possible commands\nType netlib to list network utility functions\n";
     vector<string> shellPrefix;
     shellPrefix.push_back("$");
 
