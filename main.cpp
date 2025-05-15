@@ -4,11 +4,16 @@
 #include <sstream>
 #include <conio.h>
 #include <fstream>
+#include <string>
 
 using namespace std;
 
+
 // Command function declarations
-void listDirectory(const string& directory);
+void listDirectory(const wstring& directory);
+wstring stringToWString(const string& str);
+wstring getCurrentDir();
+string wstringToString(const wstring& wstr);
 
 // Input parser
 vector<string> parseIn(const string &input)
@@ -49,13 +54,11 @@ void executeCommand(const vector<string>& args, vector<string>& prefix)
         return;
     }
     else if (args[0] == "ld") {
-        if (args.size() < 2) {
-            cerr << "Error: Missing directory for 'ld'\n";
-            return;
-        }
-        listDirectory(args[1]);
-        return;
-    }
+    std::string dir = (args.size() < 2) ? "." : args[1];
+    listDirectory(stringToWString(dir));
+    return;
+}
+
 
     else if(args[0]=="help" && args.size()<2){
         
@@ -140,12 +143,18 @@ string getUserInput()
 // Main function
 int main()
 {
-    system("cls"); // Clear screen once at start
+    system("cls"); // Clear screen
+
+    //current dir for the prefix
+    wstring bfr=getCurrentDir();
+    string currDir=wstringToString(bfr);
+
 
     string input;
     cout << "Type help -c for possible commands\nType netlib to list network utility functions\n";
     vector<string> shellPrefix;
-    shellPrefix.push_back("$");
+    shellPrefix.push_back("\n$");
+    shellPrefix.push_back(currDir);
 
     // Command loop
     while (true) {
@@ -164,29 +173,76 @@ int main()
         executeCommand(parsed, shellPrefix);
     }
 
+
+    //debug section: to be made a comment or removed guys
+
     return 0;
 }
 
 // Lists files and directories in a directory
-void listDirectory(const string& directory)
+void listDirectory(const wstring& directory)
 {
-    WIN32_FIND_DATA findFileData;
+    WIN32_FIND_DATAW findFileData;
     HANDLE hFind;
 
-    string searchPath = directory + "\\*";
-    hFind = FindFirstFile(searchPath.c_str(), &findFileData);
+    wstring searchPath = directory;
+    if (directory.back() != L'\\') searchPath += L"\\";
+    searchPath += L"*";
+
+    hFind = FindFirstFileW(searchPath.c_str(), &findFileData);
 
     if (hFind == INVALID_HANDLE_VALUE) {
-        cerr << "Error: Could not open directory." << endl;
+        wcerr << L"Error: Could not open directory. Error Code: " << GetLastError() << endl;
         return;
     }
 
     do {
-        cout << findFileData.cFileName;
+        wcout << findFileData.cFileName;
         if (findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-            cout << " [DIR]";
-        cout << endl;
-    } while (FindNextFile(hFind, &findFileData) != 0);
+            wcout << L" [DIR]";
+        wcout << endl;
+    } while (FindNextFileW(hFind, &findFileData) != 0);
 
     FindClose(hFind);
 }
+
+//helper functions
+
+//string to w string
+wstring stringToWString(const string& str){
+    int size_needed=MultiByteToWideChar(CP_UTF8,0,str.c_str(),-1,nullptr,0);
+    wstring wstr(size_needed,0);
+
+    MultiByteToWideChar(CP_UTF8,0,str.c_str(),-1,&wstr[0],size_needed);
+
+    if(!wstr.empty()&& wstr.back()==L'\0'){
+        wstr.pop_back();
+    }
+
+    return wstr;
+}
+
+//wstring to string
+
+string wstringToString(const wstring& wstr){
+    int size_needed = WideCharToMultiByte(CP_UTF8,0,wstr.c_str(),-1,nullptr,0,NULL,NULL);
+    string str(size_needed,0);
+    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, &str[0], size_needed, NULL, NULL);
+
+    if(!str.empty() && str.back()=='\0'){
+        str.pop_back();
+    }
+
+    return str;
+}
+
+//current directory
+ wstring getCurrentDir(){
+    DWORD length= GetCurrentDirectory(0,nullptr);
+    wstring buffer(length,0);
+
+    if(!buffer.empty() && buffer.back()==L'\0'){
+        buffer.pop_back();
+    }
+    
+    return buffer;}
