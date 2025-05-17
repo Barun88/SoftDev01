@@ -33,6 +33,14 @@ vector<string> parseIn(const string& input) {
 void executeCommand(const vector<string>& args, vector<string>& prefix) {
     if (args.empty()) return;
 
+    // Auto prepend "python" if user tries to run a .py script directly
+    if (args.size()>1 && args[0]=="util") {
+    vector<string> newArgs = { "python", "scripts/"+args[1]+".py" };
+    executeCommand(newArgs, prefix);
+    return;
+    }
+
+
     if (args[0] == "cd") {
         if (args.size() < 2) {
             cerr << "Error: Missing directory\n";
@@ -83,6 +91,30 @@ void executeCommand(const vector<string>& args, vector<string>& prefix) {
         return;
     }
 
+    else if (args[0] == "mkdir") {
+    if (args.size() < 2) {
+        cerr << "Error: Missing directory name\n";
+    } else {
+        if (!CreateDirectoryA(args[1].c_str(), NULL)) {
+            cerr << "Error: Could not create directory\n";
+        }
+    }
+    return;
+    }
+
+    else if (args[0] == "rm") {
+    if (args.size() < 2) {
+        cerr << "Error: Missing file name\n";
+    } else {
+        if (!DeleteFileA(args[1].c_str())) {
+            cerr << "Error: Could not delete file\n";
+        }
+    }
+    return;
+    }
+
+
+
     // Execute as external process
     string commandLine;
     for (const string& arg : args) {
@@ -110,7 +142,7 @@ void executeCommand(const vector<string>& args, vector<string>& prefix) {
 
 // --- Command auto-complete ---
 void commandList(const string& input) {
-    vector<string> validCommands = { "cd", "cls", "ping", "dir", "echo", "exit", "ld", "cat" };
+    vector<string> validCommands = { "cd", "cls", "ping", "echo", "exit", "ld", "cat","mkdir","rm" };
     cout << "\nAuto Complete Suggestions: ";
     for (const auto& cmd : validCommands) {
         if (cmd.find(input) == 0) {
@@ -120,7 +152,7 @@ void commandList(const string& input) {
     cout << endl << "$" << input;
 }
 
-// --- Get user input with tab-autocomplete support ---
+// --- Get user input with tab-autocomplete ---
 string getUserInput() {
     string input;
     char ch;

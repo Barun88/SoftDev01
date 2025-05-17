@@ -1,1 +1,31 @@
 For help with specific command type help -commandName
+
+cd <dir>
+    Change the current directory to <dir>.
+
+cls
+    Clear the console screen.
+
+ld [dir]
+    List contents of the specified directory. Defaults to current directory if not provided.
+
+cat <filename>
+    Display the contents of a file.
+
+help
+    Show this help message by reading from command_help.txt.
+
+exit
+    Exit the shell.
+
+ping <host>
+    Pings the given host (handled by system or external command).
+
+echo <message>
+    Prints the message to the console (external command).
+
+TAB
+    Pressing Tab will provide autocomplete suggestions for available commands.
+
+Note:
+    External commands are run using Windows CreateProcess. Ensure they exist in your PATH.
