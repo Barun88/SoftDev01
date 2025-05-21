@@ -33,13 +33,18 @@ vector<string> parseIn(const string& input) {
 void executeCommand(const vector<string>& args, vector<string>& prefix) {
     if (args.empty()) return;
 
-    // Auto prepend "python" if user tries to run a .py script directly
-    if (args.size()>1 && args[0]=="util") {
-    vector<string> newArgs = { "python", "scripts/"+args[1]+".py" };
+    if (args.size() > 1 && args[0] == "util") {
+    wchar_t exePath[MAX_PATH];
+    GetModuleFileNameW(NULL, exePath, MAX_PATH);
+    string exeDir = wstringToString(wstring(exePath));
+    exeDir = exeDir.substr(0, exeDir.find_last_of("\\/"));
+
+    string scriptsPath = exeDir + "/scripts/";
+    vector<string> newArgs = { "python", scriptsPath + args[1] + ".py" };
+    
     executeCommand(newArgs, prefix);
     return;
-    }
-
+}
 
     if (args[0] == "cd") {
         if (args.size() < 2) {
